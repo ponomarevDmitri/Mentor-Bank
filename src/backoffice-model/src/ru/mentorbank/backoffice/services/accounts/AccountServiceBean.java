@@ -6,7 +6,8 @@ public class AccountServiceBean implements AccountService {
 
 	@Override
 	public boolean verifyBalance(AccountInfo account) {
-		
+		if(account != null)
+			return true;
 		return false;
 	}
 

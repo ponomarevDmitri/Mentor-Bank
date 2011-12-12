@@ -13,7 +13,8 @@ public class OperationDaoStub implements OperationDao {
 
 	@Override
 	public void saveOperation(Operation operation) throws OperationDaoException {
-		
+		if(operation == null)
+			throw new OperationDaoException();
 
 	}
 

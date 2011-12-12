@@ -1,7 +1,15 @@
 package ru.mentorbank.backoffice.services.moneytransfer;
 
+
+import java.util.Calendar;
+
 import ru.mentorbank.backoffice.dao.OperationDao;
+import ru.mentorbank.backoffice.dao.exception.OperationDaoException;
+import ru.mentorbank.backoffice.dao.stub.OperationDaoStub;
+import ru.mentorbank.backoffice.model.Operation;
 import ru.mentorbank.backoffice.model.stoplist.JuridicalStopListRequest;
+import ru.mentorbank.backoffice.model.stoplist.PhisicalStopListRecord;
+import ru.mentorbank.backoffice.model.stoplist.PhysicalStopListRequest;
 import ru.mentorbank.backoffice.model.stoplist.StopListInfo;
 import ru.mentorbank.backoffice.model.stoplist.StopListStatus;
 import ru.mentorbank.backoffice.model.transfer.AccountInfo;
@@ -9,8 +17,10 @@ import ru.mentorbank.backoffice.model.transfer.JuridicalAccountInfo;
 import ru.mentorbank.backoffice.model.transfer.PhysicalAccountInfo;
 import ru.mentorbank.backoffice.model.transfer.TransferRequest;
 import ru.mentorbank.backoffice.services.accounts.AccountService;
+import ru.mentorbank.backoffice.services.accounts.AccountServiceBean;
 import ru.mentorbank.backoffice.services.moneytransfer.exceptions.TransferException;
 import ru.mentorbank.backoffice.services.stoplist.StopListService;
+import ru.mentorbank.backoffice.services.stoplist.StopListServiceStub;
 
 public class MoneyTransferServiceBean implements MoneyTransferService {
 
@@ -18,6 +28,13 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 	private AccountService accountService;
 	private StopListService stopListService;
 	private OperationDao operationDao;
+	
+	public MoneyTransferServiceBean(){
+		accountService = new AccountServiceBean();
+		stopListService = new StopListServiceStub();
+		operationDao = new OperationDaoStub();
+	}
+	
 
 	public void transfer(TransferRequest request) throws TransferException {
 		// Создаём новый экземпляр внутреннего класса, для того, чтобы можно
@@ -66,6 +83,22 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 		private void saveOperation() {
 			// TODO: Необходимо сделать вызов операции saveOperation и сделать
 			// соответствующий тест вызова операции operationDao.saveOperation()
+			Operation operation = new Operation();
+			
+			operation.setSrcAccountFromAccountInfo(request.getSrcAccount());
+			operation.setDstAccountFromAccountInfo(request.getDstAccount());
+			operation.setDstStoplistInfo(dstStopListInfo);
+			operation.setSrcStoplistInfo(srcStopListInfo);
+			operation.setCreateDate(Calendar.getInstance());
+			operation.setSentDate(Calendar.getInstance());
+			
+			try{
+				operationDao.saveOperation(operation);
+			}
+			catch(OperationDaoException daoException){
+				
+			}
+			
 		}
 
 		private void transferDo() throws TransferException {
@@ -91,13 +124,24 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 				return stopListInfo;
 			} else if (accountInfo instanceof PhysicalAccountInfo) {
 				// TODO: Сделать вызов stopListService для физических лиц
+				PhysicalAccountInfo physicalAccountInfo = (PhysicalAccountInfo) accountInfo;
+				PhysicalStopListRequest request = new PhysicalStopListRequest();
+				
+				request.setDocumentNumber(physicalAccountInfo.getDocumentNumber());
+				request.setDocumentSeries(physicalAccountInfo.getDocumentSeries());
+				request.setFirstname(request.getFirstname());
+				request.setLastname(request.getLastname());
+				request.setMiddlename(request.getMiddlename());
+				
+				StopListInfo stopListInfo = stopListService.getPhysicalStopListInfo(request);
+				return stopListInfo;
 			}
 			return null;
 		}
 
 		private boolean processStopListStatus(StopListInfo stopListInfo)
 				throws TransferException {
-			if (StopListStatus.ASKSECURITY.equals(stopListInfo.getStatus())) {
+			if (!StopListStatus.ASKSECURITY.equals(stopListInfo.getStatus())) {
 				return false;
 			}
 			return true;

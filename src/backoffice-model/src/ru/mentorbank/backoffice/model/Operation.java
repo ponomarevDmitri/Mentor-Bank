@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Calendar;
 
 import ru.mentorbank.backoffice.model.stoplist.StopListInfo;
+import ru.mentorbank.backoffice.model.transfer.AccountInfo;
 
 public class Operation implements Serializable {
 
@@ -25,12 +26,24 @@ public class Operation implements Serializable {
 		this.srcAccount = srcAccount;
 	}
 
+	public void setSrcAccountFromAccountInfo(AccountInfo accInfo){
+		if(this.srcAccount == null)
+			this.srcAccount = new Account();
+		this.srcAccount.setAccountNumber(accInfo.getAccountNumber());
+	}
+	
 	public Account getDstAccount() {
 		return dstAccount;
 	}
 
 	public void setDstAccount(Account dstAccount) {
 		this.dstAccount = dstAccount;
+	}
+	
+	public void setDstAccountFromAccountInfo(AccountInfo accInfo){
+		if(this.dstAccount == null)
+			this.dstAccount = new Account();
+		this.dstAccount.setAccountNumber(accInfo.getAccountNumber());
 	}
 
 	public Calendar getSentDate() {

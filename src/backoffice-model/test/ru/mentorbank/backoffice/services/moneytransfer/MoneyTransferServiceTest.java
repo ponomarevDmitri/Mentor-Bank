@@ -1,14 +1,18 @@
 package ru.mentorbank.backoffice.services.moneytransfer;
 
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ru.mentorbank.backoffice.dao.OperationDao;
+import ru.mentorbank.backoffice.dao.exception.OperationDaoException;
+import ru.mentorbank.backoffice.dao.stub.OperationDaoStub;
+import ru.mentorbank.backoffice.model.Operation;
 import ru.mentorbank.backoffice.model.stoplist.JuridicalStopListRequest;
-import ru.mentorbank.backoffice.model.stoplist.StopListInfo;
-import ru.mentorbank.backoffice.model.stoplist.StopListStatus;
 import ru.mentorbank.backoffice.model.transfer.AccountInfo;
 import ru.mentorbank.backoffice.model.transfer.JuridicalAccountInfo;
 import ru.mentorbank.backoffice.model.transfer.TransferRequest;
@@ -27,66 +31,40 @@ public class MoneyTransferServiceTest extends AbstractSpringTest {
 	@Before
 	public void setUp() {
 	}
-
+	
 	@Test
 	public void transfer() throws TransferException {
 		//fail("not implemented yet");
 		// TODO: Ќеобходимо протестировать, что дл€ хорошего перевода всЄ
 		// работает и вызываютс€ все необходимые методы сервисов
 		// ƒалее следует закоментированна€ закотовка
-		 StopListService mockedStopListService = (StopListServiceStub)mock(StopListServiceStub.class);
-		 AccountService mockedAccountService = (AccountServiceBean)mock(AccountServiceBean.class);
-		 
-		 //==============порождение "хорошего" тестового запроса============
-		 moneyTransferService = new MoneyTransferServiceBean();
-		 TransferRequest request = new TransferRequest();
-		 JuridicalAccountInfo accountInfo = new JuridicalAccountInfo();
-		 accountInfo.setAccountNumber("2432");
-		 accountInfo.setInn("1111111111111");
-		 request.setDstAccount(accountInfo);
-		 request.setSrcAccount(accountInfo);
-		 
-		 moneyTransferService.transfer(request);
+		JuridicalAccountInfo accountInfo = mock(JuridicalAccountInfo.class);
+		when(accountInfo.getInn()).thenReturn("1111111111111");
 		
-		 //verify(mockedStopListService).getJuridicalStopListInfo(null);
-		 //verify(mockedAccountService).verifyBalance(null);
-		 verify(mockedStopListService);
-		 verify(mockedAccountService);
-	}
-	
-	
-	private void verify(Object object){
-		if(object instanceof StopListService){
-			JuridicalStopListRequest request = new JuridicalStopListRequest();//предполагаемый "хороший" запрос
-			request.setInn("1111111111111");
-			StopListInfo stoplistInfo = ((StopListService) object).getJuridicalStopListInfo(request);
-			if(stoplistInfo.getStatus() != StopListStatus.OK)
-				fail("getJuridicalStopListInfo возвращает неправильное значение");
-		}
-		else
-			if(object instanceof AccountService){
-				if(((AccountService) object).verifyBalance(null))
-					fail("проходит положительна€ проверка баланса при AccountInfo = null");
-				AccountInfo accountInfo = new AccountInfo();
-				accountInfo.setAccountNumber("555");  //предполагаемый "хороший" аккаунт
-				if(!((AccountService) object).verifyBalance(accountInfo))
-					fail("перевод c \"хорошего\" аккаунта не проходит");
-			}
-	}
-	
-	private Object mock(Class<?> class1){
+		TransferRequest mockRequest = mock(TransferRequest.class);
+		when(mockRequest.getDstAccount()).thenReturn(accountInfo);
+		when(mockRequest.getSrcAccount()).thenReturn(accountInfo);
 		
-		if(class1 == AccountServiceBean.class){
-			AccountServiceBean resultOb = new AccountServiceBean();
-			return resultOb;
-		}
-		if(class1 == StopListServiceStub.class){
-			StopListServiceStub resultStopList = new StopListServiceStub();
-			return resultStopList;
-		}
+		StopListService mockedStopListService = new StopListServiceStub();
+		StopListService spyStopListService = spy(mockedStopListService);
 		
-		return null;
+		AccountService mockedAccountService = Mockito.mock(AccountServiceBean.class);
+		when(mockedAccountService.verifyBalance(accountInfo)).thenReturn(true);
+		OperationDao operationDao = Mockito.mock(OperationDaoStub.class);
+		
+		((MoneyTransferServiceBean) moneyTransferService).setAccountService(mockedAccountService);
+		((MoneyTransferServiceBean)moneyTransferService).setStopListService(spyStopListService);
+		((MoneyTransferServiceBean)moneyTransferService).setOperationDao(operationDao);
+		moneyTransferService.transfer(mockRequest);
+		
+		Mockito.verify(spyStopListService,times(2)).getJuridicalStopListInfo(any(JuridicalStopListRequest.class));
+		Mockito.verify(mockedAccountService).verifyBalance(any(AccountInfo.class));
+		try{
+			Mockito.verify(operationDao).saveOperation(any(Operation.class));
+		}
+		catch(OperationDaoException e){
+			fail("DAO exception occured");
+		}
 	}
-	
 }
 

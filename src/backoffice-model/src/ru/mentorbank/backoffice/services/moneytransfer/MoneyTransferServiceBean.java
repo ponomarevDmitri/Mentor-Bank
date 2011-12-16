@@ -3,12 +3,11 @@ package ru.mentorbank.backoffice.services.moneytransfer;
 
 import java.util.Calendar;
 
+
 import ru.mentorbank.backoffice.dao.OperationDao;
 import ru.mentorbank.backoffice.dao.exception.OperationDaoException;
-import ru.mentorbank.backoffice.dao.stub.OperationDaoStub;
 import ru.mentorbank.backoffice.model.Operation;
 import ru.mentorbank.backoffice.model.stoplist.JuridicalStopListRequest;
-import ru.mentorbank.backoffice.model.stoplist.PhisicalStopListRecord;
 import ru.mentorbank.backoffice.model.stoplist.PhysicalStopListRequest;
 import ru.mentorbank.backoffice.model.stoplist.StopListInfo;
 import ru.mentorbank.backoffice.model.stoplist.StopListStatus;
@@ -17,10 +16,8 @@ import ru.mentorbank.backoffice.model.transfer.JuridicalAccountInfo;
 import ru.mentorbank.backoffice.model.transfer.PhysicalAccountInfo;
 import ru.mentorbank.backoffice.model.transfer.TransferRequest;
 import ru.mentorbank.backoffice.services.accounts.AccountService;
-import ru.mentorbank.backoffice.services.accounts.AccountServiceBean;
 import ru.mentorbank.backoffice.services.moneytransfer.exceptions.TransferException;
 import ru.mentorbank.backoffice.services.stoplist.StopListService;
-import ru.mentorbank.backoffice.services.stoplist.StopListServiceStub;
 
 public class MoneyTransferServiceBean implements MoneyTransferService {
 
@@ -30,11 +27,8 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 	private OperationDao operationDao;
 	
 	public MoneyTransferServiceBean(){
-		accountService = new AccountServiceBean();
-		stopListService = new StopListServiceStub();
-		operationDao = new OperationDaoStub();
+		
 	}
-	
 
 	public void transfer(TransferRequest request) throws TransferException {
 		// Создаём новый экземпляр внутреннего класса, для того, чтобы можно
@@ -71,7 +65,7 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 		 * Если операция перевода прошла, то её нужно удалить из таблицы
 		 * операций для ручного вмешательства
 		 */
-		private void removeSuccessfulOperation() {
+		private void removeSuccessfulOperation()  {
 
 		}
 
@@ -80,7 +74,7 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 			dstStopListInfo = getStopListInfo(request.getDstAccount());
 		}
 
-		private void saveOperation() {
+		private void saveOperation() throws TransferException {
 			// TODO: Необходимо сделать вызов операции saveOperation и сделать
 			// соответствующий тест вызова операции operationDao.saveOperation()
 			Operation operation = new Operation();
@@ -96,7 +90,7 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 				operationDao.saveOperation(operation);
 			}
 			catch(OperationDaoException daoException){
-				
+				throw new TransferException("ошибка сохранения");
 			}
 			
 		}
@@ -148,7 +142,7 @@ public class MoneyTransferServiceBean implements MoneyTransferService {
 		}
 
 		private void verifySrcBalance() throws TransferException {
-			if (!accountService.verifyBalance(request.getSrcAccount()))
+			if (!accountService.verifyBalance(request.getSrcAccount()))    
 				throw new TransferException(LOW_BALANCE_ERROR_MESSAGE);
 		}
 	}

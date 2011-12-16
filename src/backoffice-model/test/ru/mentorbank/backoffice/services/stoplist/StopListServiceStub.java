@@ -17,19 +17,18 @@ public class StopListServiceStub implements StopListService {
 	public static final String INN_FOR_ASKSECURITY_STATUS = "33333333333333";
 
 	//hash map сопоставляет известные физ лица с их статусами в стоп листе
-	public static final HashMap<PhisicalStopListRecord, StopListStatus> phisicalStopList = new HashMap<PhisicalStopListRecord, StopListStatus>(){/**
+	public static final PhisicalStopListRecord physicalStopListRecordExampleOK = new PhisicalStopListRecord("2", "2", "2", "2", "2");
+	public static final PhisicalStopListRecord physicalStopListRecordExampleSTOP = new PhisicalStopListRecord("1", "1", "1", "1", "1");
+	public static final PhisicalStopListRecord physicalStopListRecordExampleASKSECURITY = new PhisicalStopListRecord("3", "3", "3", "3", "3");
+	public static final HashMap<PhisicalStopListRecord, StopListStatus> physicalStopList = new HashMap<PhisicalStopListRecord, StopListStatus>(){/**
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
 
 	{
-		
-		put(new PhisicalStopListRecord("2", "2", "2", "2", "2"), StopListStatus.OK);
+		put(physicalStopListRecordExampleOK, StopListStatus.OK);
+		put(physicalStopListRecordExampleSTOP,StopListStatus.STOP);
 	}};
-	
-	
-	
-	
 	
 	@Override
 	public StopListInfo getJuridicalStopListInfo(
@@ -57,12 +56,11 @@ public class StopListServiceStub implements StopListService {
 																			 request.getFirstname(), 
 																			 request.getLastname(), 
 																			 request.getMiddlename());
-		StopListStatus status = phisicalStopList.get(consideredRecord);
+		StopListStatus status = physicalStopList.get(consideredRecord);
 		if(status != null)
 			resultInfo.setStatus(status);
 		else
 			resultInfo.setStatus(StopListStatus.ASKSECURITY);
 		return resultInfo;
 	}
-
 }
